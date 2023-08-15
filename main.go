@@ -10,9 +10,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
+	"time"
 )
 
 func main() {
+	start := time.Now()
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err)
@@ -30,12 +33,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	var wg sync.WaitGroup
 	if parent_folder_path != nil {
 		parent_folder, err := os.ReadDir(filepath.Join(pwd, *parent_folder_path))
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		for i, sub_folder := range parent_folder {
 			if err != nil {
 				fmt.Println(err)
@@ -45,25 +48,34 @@ func main() {
 			amount_of_sprites, folder_names, sprite_height, sprite_width := iterate_folder(sub_folder_path, i)
 			if len(amount_of_sprites) == len(folder_names) {
 				for i, folder_name := range folder_names {
-					spritesheet_width := 8
-					spritesheet_height := math.Ceil(float64(amount_of_sprites[i]/spritesheet_width) + 1)
-					geometry_size := fmt.Sprintf("%vx%v", sprite_height, sprite_width)
-					input_folder_path := filepath.Join((sub_folder_path), folder_name, "/*")
-					tile_size := fmt.Sprintf("8x%v", spritesheet_height)
-					background_type := "transparent"
-					filter_type := "Catrom"
-					sprite_name := fmt.Sprintf("%s_f%d_v%v.png", folder_name, amount_of_sprites[i], spritesheet_height)
-					cmd := exec.Command("montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
-						"-background", background_type, "-filter", filter_type, sprite_name)
-					out, err := cmd.CombinedOutput()
-					if err != nil {
-						fmt.Println("could not run command: ", err)
-					}
-					fmt.Println("Output: ", string(out), sprite_name)
+					wg.Add(1)
+					go func(i int, folder_name string) {
+						defer wg.Done()
+						make_spritesheet(i, folder_name, sub_folder_path, sprite_height, sprite_width, amount_of_sprites)
+					}(i, folder_name)
 				}
+				wg.Wait()
 			}
 		}
 	}
+	fmt.Println(time.Since(start))
+}
+
+func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_height int, sprite_width int, amount_of_sprites []int) {
+	spritesheet_width := 8
+	background_type := "transparent"
+	geometry_size := fmt.Sprintf("%vx%v", sprite_height, sprite_width)
+	filter_type := "Catrom"
+	spritesheet_height := math.Ceil(float64(amount_of_sprites[i]/spritesheet_width) + 1)
+	input_folder_path := filepath.Join((sub_folder_path), folder_name, "/*")
+	tile_size := fmt.Sprintf("%vx%v", spritesheet_width, spritesheet_height)
+	sprite_name := fmt.Sprintf("%s_f%d_v%v.png", folder_name, amount_of_sprites[i], spritesheet_height)
+	out, err := exec.Command("montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
+		"-background", background_type, "-filter", filter_type, sprite_name).CombinedOutput()
+	if err != nil {
+		fmt.Println("could not run command: ", err)
+	}
+	fmt.Println("Output: ", string(out), sprite_name)
 }
 
 func iterate_folder(file_path_to_walk string, index int) ([]int, []string, int, int) {
