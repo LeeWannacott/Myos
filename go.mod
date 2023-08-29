@@ -1,3 +1,3 @@
-module github.com/LeeWannacott/Myos
+module github.com/LeeWannacott/myos
 
 go 1.20
