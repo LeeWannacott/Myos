@@ -84,7 +84,7 @@ func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_
 		fmt.Println("Output: ", string(out), sprite_name)
 	} else {
 		fmt.Println(sub_folder_path_gontage + "/" + folder_name)
-		out, err := exec.Command("gontage", "-f", sub_folder_path_gontage+"/"+folder_name, "n", sprite_name).CombinedOutput()
+		out, err := exec.Command("gontage", "-f", sub_folder_path_gontage+"/"+folder_name, "-n", sprite_name).CombinedOutput()
 		if err != nil {
 			fmt.Println("could not run command: ", err)
 		}
