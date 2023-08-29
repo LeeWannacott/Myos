@@ -23,6 +23,7 @@ func main() {
 	}
 
 	parent_folder_path := flag.String("p", "", "folder path in current directory with sub folder containing folders with sprites; example: 'animations_folder'")
+	useMontage := flag.Bool("m", false, "gontage or montage")
 	help := flag.Bool("h", false, "Display help")
 
 	flag.Parse()
@@ -43,6 +44,7 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
+			sub_folder_path_gontage := filepath.Join(*parent_folder_path, sub_folder.Name())
 			sub_folder_path := filepath.Join(pwd, *parent_folder_path, sub_folder.Name())
 
 			amount_of_sprites, folder_names, sprite_height, sprite_width := iterate_folder(sub_folder_path, i)
@@ -51,7 +53,7 @@ func main() {
 					wg.Add(1)
 					go func(i int, folder_name string) {
 						defer wg.Done()
-						make_spritesheet(i, folder_name, sub_folder_path, sprite_height, sprite_width, amount_of_sprites)
+						make_spritesheet(i, folder_name, sub_folder_path, sprite_height, sprite_width, amount_of_sprites, *useMontage, sub_folder_path_gontage)
 					}(i, folder_name)
 				}
 				wg.Wait()
@@ -61,21 +63,34 @@ func main() {
 	fmt.Println(time.Since(start))
 }
 
-func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_height int, sprite_width int, amount_of_sprites []int) {
+func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_height int, sprite_width int, amount_of_sprites []int, useMontage bool, sub_folder_path_gontage string) {
 	spritesheet_width := 8
 	background_type := "transparent"
 	geometry_size := fmt.Sprintf("%vx%v", sprite_height, sprite_width)
 	filter_type := "Catrom"
 	spritesheet_height := math.Ceil(float64(amount_of_sprites[i]/spritesheet_width) + 1)
 	input_folder_path := filepath.Join((sub_folder_path), folder_name, "/*")
+	// input_folder_path_g := filepath.Join(parent_folder_path, folder_name)
 	tile_size := fmt.Sprintf("%vx%v", spritesheet_width, spritesheet_height)
 	sprite_name := fmt.Sprintf("%s_f%d_v%v.png", folder_name, amount_of_sprites[i], spritesheet_height)
-	out, err := exec.Command("montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
-		"-background", background_type, "-filter", filter_type, sprite_name).CombinedOutput()
-	if err != nil {
-		fmt.Println("could not run command: ", err)
+
+	if useMontage {
+		out, err := exec.Command("montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
+			"-background", background_type, "-filter", filter_type, sprite_name).CombinedOutput()
+		if err != nil {
+			fmt.Println("could not run command: ", err)
+		}
+		fmt.Println(input_folder_path)
+		fmt.Println("Output: ", string(out), sprite_name)
+	} else {
+		fmt.Println(sub_folder_path_gontage + "/" + folder_name)
+		out, err := exec.Command("gontage", "-f", sub_folder_path_gontage+"/"+folder_name, "n", sprite_name).CombinedOutput()
+		if err != nil {
+			fmt.Println("could not run command: ", err)
+		}
+		fmt.Println("Output: ", string(out), sprite_name)
+
 	}
-	fmt.Println("Output: ", string(out), sprite_name)
 }
 
 func iterate_folder(file_path_to_walk string, index int) ([]int, []string, int, int) {
