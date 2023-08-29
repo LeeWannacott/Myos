@@ -67,7 +67,6 @@ func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_
 	spritesheet_width := 8
 	background_type := "transparent"
 	geometry_size := fmt.Sprintf("%vx%v", sprite_height, sprite_width)
-	filter_type := "Catrom"
 	spritesheet_height := math.Ceil(float64(amount_of_sprites[i]/spritesheet_width) + 1)
 	input_folder_path := filepath.Join((sub_folder_path), folder_name, "/*")
 	// input_folder_path_g := filepath.Join(parent_folder_path, folder_name)
@@ -76,7 +75,7 @@ func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_
 
 	if useMontage {
 		out, err := exec.Command("montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
-			"-background", background_type, "-filter", filter_type, sprite_name).CombinedOutput()
+			"-background", background_type, sprite_name).CombinedOutput()
 		if err != nil {
 			fmt.Println("could not run command: ", err)
 		}
