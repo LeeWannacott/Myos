@@ -23,7 +23,8 @@ func main() {
 	}
 
 	parent_folder_path := flag.String("p", "", "folder path in current directory with sub folder containing folders with sprites; example: 'animations_folder'")
-	useMontage := flag.Bool("m", false, "gontage or montage")
+	useMontage := flag.Bool("m", false, "montage_v6")
+	useMontage7 := flag.Bool("m7", false, "montage_v7")
 	help := flag.Bool("h", false, "Display help")
 
 	flag.Parse()
@@ -53,7 +54,7 @@ func main() {
 					wg.Add(1)
 					go func(i int, folder_name string) {
 						defer wg.Done()
-						make_spritesheet(i, folder_name, sub_folder_path, sprite_height, sprite_width, amount_of_sprites, *useMontage, sub_folder_path_gontage)
+						make_spritesheet(i, folder_name, sub_folder_path, sprite_height, sprite_width, amount_of_sprites, *useMontage, *useMontage7, sub_folder_path_gontage)
 					}(i, folder_name)
 				}
 				wg.Wait()
@@ -63,7 +64,7 @@ func main() {
 	fmt.Println(time.Since(start))
 }
 
-func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_height int, sprite_width int, amount_of_sprites []int, useMontage bool, sub_folder_path_gontage string) {
+func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_height int, sprite_width int, amount_of_sprites []int, useMontage bool, useMontage7 bool, sub_folder_path_gontage string) {
 	spritesheet_width := 8
 	background_type := "transparent"
 	geometry_size := fmt.Sprintf("%vx%v", sprite_height, sprite_width)
@@ -75,6 +76,14 @@ func make_spritesheet(i int, folder_name string, sub_folder_path string, sprite_
 
 	if useMontage {
 		out, err := exec.Command("montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
+			"-background", background_type, sprite_name).CombinedOutput()
+		if err != nil {
+			fmt.Println("could not run command: ", err)
+		}
+		fmt.Println(input_folder_path)
+		fmt.Println("Output: ", string(out), sprite_name)
+	} else if useMontage7 {
+		out, err := exec.Command("./magick", "montage", input_folder_path, "-geometry", geometry_size, "-tile", tile_size,
 			"-background", background_type, sprite_name).CombinedOutput()
 		if err != nil {
 			fmt.Println("could not run command: ", err)
